@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "name": "ClearVision Mobile Repository",
+  "description": "ClearVision-inspired appearance controls for Revenge Next on Android.",
+  "plugins": {
+    "io.github.fokiiiiiii.revenge.clearvision-mobile": {
+      "name": "ClearVision Mobile",
+      "description": "ClearVision-inspired appearance controls for Revenge Next on Android.",
+      "author": "Fokiiiiiii",
+      "channels": {
+        "latest": "1.0.1"
+      },
+      "versions": {
+        "1.0.1": {
+          "url": "https://raw.githubusercontent.com/Fokiiiiiii/revenge-clearvision-mobile/main/plugin-dist/io.github.fokiiiiiii.revenge.clearvision-mobile@1.0.1.zip",
+          "sha256": "d0f4c12b57c63eb62b0c9a794525120ba4c73ac60dc1be097d8e0658799a500c",
+          "size": 7071,
+          "dependencies": {
+            "revenge.api": {
+              "version": ">=1 <2"
+            },
+            "discord": {
+              "version": "*"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+/* BgVideo: 6n8vqr.mp4 — Fuji Night */
+@import url("https://clearvision.github.io/ClearVision-v7/main.css");
+@import url("https://clearvision.github.io/ClearVision-v7/betterdiscord.css");
+
+:root {
+  --main-color: #b6a0ed;
+  --hover-color: #d1bdf8;
+  --focus-color: #d1bdf8;
+  --success-color: #87d8cb;
+  --warning-color: #ecc39e;
+  --danger-color: #e89bad;
+  --info-color: #b1d9ff;
+  --online-color: #87d8cb;
+  --idle-color: #ecc39e;
+  --dnd-color: #e89bad;
+  --streaming-color: #b8a0ee;
+  --offline-color: #a5acc4;
+
+  --normal-text: #f4f1ff;
+  --muted-text: #d4d9ed;
+  --text-normal: var(--normal-text);
+  --text-primary: #faf7ff;
+  --text-secondary: #e2e3f1;
+  --text-tertiary: #d4d9ed;
+  --text-muted: var(--muted-text);
+  --text-link: #b9dcff;
+  --text-positive: #a0e5d6;
+  --text-danger: #f1b0be;
+  --header-primary: #faf7ff;
+  --header-secondary: #e2e3f1;
+  --interactive-normal: #e2e3f1;
+  --interactive-hover: #faf7ff;
+  --interactive-active: #ffffff;
+  --interactive-muted: #b7bfd8;
+  --channel-normal: #e1def3;
+  --channel-muted: #c6cce2;
+  --channel-hover: #faf7ff;
+  --channel-selected: #ffffff;
+  --channel-selected-bg: rgba(182,160,237,0.24);
+  --channel-unread: #f5edff;
+  --channel-unread-hover: #ffffff;
+  --channels-default: var(--channel-normal);
+
+  --background-shading-percent: 100%;
+  --background-shading: rgba(7,11,26,0.68);
+  --card-shading: rgba(16,20,39,0.64);
+  --input-shading: rgba(10,15,33,0.74);
+  --popout-shading: rgba(8,12,28,0.90);
+  --modal-shading: rgba(8,12,28,0.88);
+  --main-font: "ggsans-Normal, NotoSans-Normal";
+  --code-font: "monospace";
+
+  --discord-text-code: #e5dcff;
+  --discord-text-subtle: #d4d9ed;
+  --discord-border-subtle: rgba(192,184,224,0.14);
+  --discord-border-normal: rgba(192,184,224,0.24);
+  --discord-border-strong: rgba(205,195,240,0.38);
+  --discord-background-modifier-accent: rgba(190,170,235,0.16);
+  --discord-interactive-background-selected: rgba(182,160,237,0.24);
+  --discord-interactive-background-hover: rgba(182,160,237,0.14);
+  --discord-interactive-accent-background-default: #b6a0ed;
+  --discord-interactive-accent-background-active: #d1bdf8;
+}
+
+.theme-darker {
+  --background-shading: rgba(5,8,23,0.73);
+  --card-shading: rgba(11,15,33,0.70);
+  --input-shading: rgba(7,12,29,0.79);
+  --popout-shading: rgba(5,8,23,0.92);
+  --modal-shading: rgba(5,8,23,0.90);
+}
+
+.theme-midnight {
+  --background-shading: rgba(3,5,17,0.78);
+  --card-shading: rgba(7,10,26,0.76);
+  --input-shading: rgba(5,8,23,0.84);
+  --popout-shading: rgba(3,5,17,0.94);
+  --modal-shading: rgba(3,5,17,0.92);
+}

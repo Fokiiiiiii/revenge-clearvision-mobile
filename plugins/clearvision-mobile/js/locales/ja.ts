@@ -1,9 +1,6 @@
 export default {
 	clearVisionTitle: 'ClearVision Mobile',
-	enableThemeColors: 'テーマカラーを有効化',
-	useDarkTheme: 'ダークテーマを使用',
-	transparentPanelsWithBgVideo: 'BgVideo有効時にパネルを透過',
-	accentColor: 'アクセントカラー',
-	hoverColor: 'ホバー時のカラー',
-	fontFamily: 'フォントファミリー',
+	customCss: 'カスタムCSS',
+	customCssDescription:
+		'ClearVisionのCSS変数を貼り付けます。:rootと.theme-*の値を現在のテーマに合わせて反映します。',
 }
