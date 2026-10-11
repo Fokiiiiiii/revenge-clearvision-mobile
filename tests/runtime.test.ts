@@ -31,7 +31,13 @@ const notificationModule = {
 	NotificationPressable: () =>
 		createElement(
 			'AnimatedView',
-			{ style: { transform: [{ scale: 1 }] } },
+			{
+				style: {
+					transform: [{ scale: 1 }],
+					backgroundColor: '#393a41',
+					borderRadius: 16,
+				},
+			},
 			createElement(
 				'PressableHighlight',
 				{
@@ -134,7 +140,14 @@ test('CSS storage updates use the cache and publish readable shading without res
 		])
 		expect(pressable.props.onPress).toBe(notificationPress)
 		expect(pressable.props.children.props.style).toEqual({ color: '#f4f1ff' })
-		expect(banner.props.style).toEqual({ transform: [{ scale: 1 }] })
+		expect(banner.props.style).toEqual([
+			{
+				transform: [{ scale: 1 }],
+				backgroundColor: '#393a41',
+				borderRadius: 16,
+			},
+			{ backgroundColor: 'transparent' },
+		])
 		expect(
 			(Tokens.RawColor as Record<string, string>)[
 				Tokens.SemanticColor.TEXT_DEFAULT.dark.raw

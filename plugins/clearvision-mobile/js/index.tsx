@@ -425,7 +425,10 @@ export default plugin<{ jsonStorage: Settings }>({
 								!isValidElement(tree)
 							)
 								return tree
-							const element = tree as ReactElement<{ children?: ReactNode }>
+							const element = tree as ReactElement<{
+								style?: unknown
+								children?: ReactNode
+							}>
 							const child = element.props.children
 							if (!isValidElement(child)) return tree
 							const pressable = child as ReactElement<Record<string, unknown>>
@@ -435,6 +438,10 @@ export default plugin<{ jsonStorage: Settings }>({
 							)
 								return tree
 							return cloneElement(element, {
+								style: [
+									element.props.style,
+									{ backgroundColor: 'transparent' },
+								],
 								children: cloneElement(pressable, {
 									style: [
 										pressable.props.style,
