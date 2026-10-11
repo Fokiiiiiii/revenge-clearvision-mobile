@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'bun:test'
+import { createElement } from 'react'
 
 const textDefaults = { style: { fontSize: 16 } }
 const Text = { defaultProps: textDefaults as unknown }
@@ -20,7 +21,51 @@ mock.module('@revenge-mod/modules/finders', () => ({
 mock.module('@revenge-mod/modules/finders/filters', () => ({
 	createFilterGenerator: () => () => ({}),
 }))
-mock.module('@revenge-mod/patcher', () => ({ after: () => () => {} }))
+const notificationPress = () => {}
+const notificationStyle = {
+	borderRadius: 16,
+	padding: 12,
+	backgroundColor: '#393a41',
+}
+const notificationModule = {
+	NotificationPressable: () =>
+		createElement(
+			'AnimatedView',
+			{ style: { transform: [{ scale: 1 }] } },
+			createElement(
+				'PressableHighlight',
+				{
+					style: notificationStyle,
+					onPress: notificationPress,
+					accessibilityRole: 'button',
+				},
+				createElement('Text', { style: { color: '#f4f1ff' } }, 'CSS test'),
+			),
+		),
+}
+const originalNotification = notificationModule.NotificationPressable
+mock.module('@revenge-mod/discord/utils/modules/finders', () => ({
+	getModuleWithImportedPath: (
+		_path: string,
+		found: (module: typeof notificationModule) => void,
+	) => {
+		found(notificationModule)
+		return () => {}
+	},
+}))
+mock.module('@revenge-mod/patcher', () => ({
+	after: (
+		target: Record<string, any>,
+		key: string,
+		callback: (result: any) => any,
+	) => {
+		const original = target[key]
+		target[key] = (...args: unknown[]) => callback(original(...args))
+		return () => {
+			target[key] = original
+		}
+	},
+}))
 mock.module('../plugins/clearvision-mobile/js/settings', () => ({
 	default: () => null,
 }))
@@ -63,7 +108,7 @@ test('CSS storage updates use the cache and publish readable shading without res
 	else Reflect.set(globalThis, 'plugin', oldFactory)
 	let stored = {
 		customCss:
-			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); --header-shading: rgba(10,15,33,0.46); --member-list-shading: rgba(9,14,31,0.22); --member-card-shading: rgba(21,27,48,0.38); }',
+			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); --header-shading: rgba(10,15,33,0.46); --member-list-shading: rgba(9,14,31,0.22); --member-card-shading: rgba(21,27,48,0.38); --notification-shading: rgba(10,15,33,0.92); }',
 	}
 	let notify: (value?: unknown) => void = () => {}
 	const disposers: Array<() => void> = []
@@ -81,6 +126,15 @@ test('CSS storage updates use the cache and publish readable shading without res
 		},
 	} as never)
 	try {
+		const banner = notificationModule.NotificationPressable()
+		const pressable = banner.props.children
+		expect(pressable.props.style).toEqual([
+			notificationStyle,
+			{ backgroundColor: 'rgba(10,15,33,0.9215686274509803)' },
+		])
+		expect(pressable.props.onPress).toBe(notificationPress)
+		expect(pressable.props.children.props.style).toEqual({ color: '#f4f1ff' })
+		expect(banner.props.style).toEqual({ transform: [{ scale: 1 }] })
 		expect(
 			(Tokens.RawColor as Record<string, string>)[
 				Tokens.SemanticColor.TEXT_DEFAULT.dark.raw
@@ -111,6 +165,9 @@ test('CSS storage updates use the cache and publish readable shading without res
 		}
 		notify({ unrelatedDelta: true })
 		expect(
+			notificationModule.NotificationPressable().props.children.props.style,
+		).toBe(notificationStyle)
+		expect(
 			(Tokens.RawColor as Record<string, string>)[
 				Tokens.SemanticColor.TEXT_DEFAULT.dark.raw
 			],
@@ -123,6 +180,7 @@ test('CSS storage updates use the cache and publish readable shading without res
 		for (const dispose of disposers.reverse()) dispose()
 		shared.__revengeNextBgVideoMobile = undefined
 	}
+	expect(notificationModule.NotificationPressable).toBe(originalNotification)
 	expect(shared.__revengeNextClearVisionMobile).toBeUndefined()
 	expect(Tokens.SemanticColor.TEXT_DEFAULT.dark).toEqual({
 		raw: 'ORIGINAL',

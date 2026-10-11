@@ -14,6 +14,7 @@
 | 動画全体の暗い膜 | `--background-shading` |
 | チャンネルヘッダーとステータスバー | `--header-shading`、`--statusbar-shading` |
 | ユーザー一覧の画面とカード | `--member-list-shading`、`--member-card-shading` |
+| 新着メッセージのアプリ内通知バナー | `--notification-shading` |
 | チャンネル一覧の見出し、下のバー | `--card-shading`、`--input-shading` |
 | メニュー、ポップアップ、モーダル | `--popout-shading`、`--modal-shading` |
 | 暗い膜の強さの倍率 | `--background-shading-percent` |

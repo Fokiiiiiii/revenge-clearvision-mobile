@@ -1,4 +1,5 @@
 import { Tokens } from '@revenge-mod/discord/common/tokens'
+import { getModuleWithImportedPath } from '@revenge-mod/discord/utils/modules/finders'
 import { getModules } from '@revenge-mod/modules/finders'
 import { createFilterGenerator } from '@revenge-mod/modules/finders/filters'
 import { after } from '@revenge-mod/patcher'
@@ -410,6 +411,41 @@ export default plugin<{ jsonStorage: Settings }>({
 					),
 				)
 			}),
+		)
+		cleanup(
+			getModuleWithImportedPath(
+				'modules/in_app_notifications/native/Notification.tsx',
+				module => {
+					const exports = module as { NotificationPressable: FC } | undefined
+					if (typeof exports?.NotificationPressable !== 'function') return
+					cleanup(
+						after(exports, 'NotificationPressable', tree => {
+							if (
+								!cssVariables['--notification-shading'] ||
+								!isValidElement(tree)
+							)
+								return tree
+							const element = tree as ReactElement<{ children?: ReactNode }>
+							const child = element.props.children
+							if (!isValidElement(child)) return tree
+							const pressable = child as ReactElement<Record<string, unknown>>
+							if (
+								pressable.props.accessibilityRole !== 'button' ||
+								!('style' in pressable.props)
+							)
+								return tree
+							return cloneElement(element, {
+								children: cloneElement(pressable, {
+									style: [
+										pressable.props.style,
+										{ backgroundColor: panelShade('--notification-shading') },
+									],
+								}),
+							})
+						}),
+					)
+				},
+			),
 		)
 		patchSurface('ChatView', cleanup)
 		patchSurface('ChatInput', cleanup)
