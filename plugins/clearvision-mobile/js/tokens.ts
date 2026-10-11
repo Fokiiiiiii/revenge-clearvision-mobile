@@ -185,6 +185,23 @@ export function createCssTokenTheme(tokens: unknown) {
 		record(namespace?.SemanticColor) ?? record(root?.SemanticColor)
 	const rawColors = record(namespace?.RawColor) ?? record(root?.RawColor)
 	const definitions = Object.entries(semantic ?? {})
+	const originalBackgroundColors: string[] = []
+	const defaults = record(namespace?.default) ?? rootDefault
+	const internal = record(defaults?.internal)
+	const colors = record(defaults?.colors)
+	if (typeof internal?.resolveSemanticColor === 'function') {
+		for (const name of rootBackgroundTokens)
+			for (const mode of modes) {
+				try {
+					const value = Reflect.apply(internal.resolveSemanticColor, internal, [
+						mode,
+						colors?.[name],
+						{},
+					])
+					if (typeof value === 'string') originalBackgroundColors.push(value)
+				} catch {}
+			}
+	}
 	const snapshots: Snapshot[] = []
 	let captured = new WeakMap<object, Set<string>>()
 	let appliedMappings = 0
@@ -285,6 +302,7 @@ export function createCssTokenTheme(tokens: unknown) {
 		apply,
 		restore,
 		count: definitions.length,
+		originalBackgroundColors,
 		get mappings() {
 			return appliedMappings
 		},

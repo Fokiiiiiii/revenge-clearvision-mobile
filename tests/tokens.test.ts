@@ -74,7 +74,7 @@ function makeTokens(names: string[]): TokenSet {
 				const alpha = Math.round(def.opacity * 255)
 					.toString(16)
 					.padStart(2, '0')
-				return raw + alpha
+				return def.opacity === 1 ? raw : raw + alpha
 			},
 		},
 	}
@@ -116,6 +116,8 @@ describe('ClearVision semantic CSS tokens', () => {
 		def.dark = { raw: 'NEUTRAL_73', opacity: 1 }
 		tokens.Tokens.RawColor.NEUTRAL_73 = '#2c2d32'
 		const theme = createCssTokenTheme(tokens)
+		expect(theme.originalBackgroundColors).toContain('#2c2d32')
+		const baseline = [...theme.originalBackgroundColors]
 
 		theme.apply(
 			{ '--discord-background-base-lowest': 'rgba(24, 32, 57, 0.73)' },
@@ -129,6 +131,7 @@ describe('ClearVision semantic CSS tokens', () => {
 				{},
 			),
 		).toBe('#182039ba')
+		expect(theme.originalBackgroundColors).toEqual(baseline)
 
 		theme.restore()
 

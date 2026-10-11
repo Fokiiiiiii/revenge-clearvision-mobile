@@ -46,6 +46,7 @@ type SharedClearVisionBridge = {
 	backgroundUri?: string
 	backgroundColor?: string
 	backgroundOverlay?: string
+	originalBackgroundColors?: string[]
 	panelColors?: Record<string, string>
 	refresh?: () => void
 	positionX?: number
@@ -155,6 +156,7 @@ function updateClearVisionBridge() {
 			modal: panelShade('--modal-shading'),
 		},
 		refresh: applyTokenTheme,
+		originalBackgroundColors: tokenTheme?.originalBackgroundColors,
 		positionX: position.x,
 		positionY: position.y,
 		crop: cssVariables['--background-size']?.toLowerCase() !== 'contain',
