@@ -63,7 +63,7 @@ test('CSS storage updates use the cache and publish readable shading without res
 	else Reflect.set(globalThis, 'plugin', oldFactory)
 	let stored = {
 		customCss:
-			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); }',
+			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); --header-shading: rgba(10,15,33,0.46); --member-list-shading: rgba(9,14,31,0.22); --member-card-shading: rgba(21,27,48,0.38); }',
 	}
 	let notify: (value?: unknown) => void = () => {}
 	const disposers: Array<() => void> = []
@@ -96,6 +96,15 @@ test('CSS storage updates use the cache and publish readable shading without res
 		expect(
 			shared.__revengeNextClearVisionMobile?.backgroundOverlay,
 		).toStartWith('rgba(7,11,26,')
+		expect(
+			shared.__revengeNextClearVisionMobile?.panelColors.header,
+		).toStartWith('rgba(10,15,33,')
+		expect(
+			shared.__revengeNextClearVisionMobile?.panelColors.memberList,
+		).toStartWith('rgba(9,14,31,')
+		expect(
+			shared.__revengeNextClearVisionMobile?.panelColors.memberCard,
+		).toStartWith('rgba(21,27,48,')
 		stored = {
 			customCss:
 				':root { --normal-text: #fedcba; --background-shading: rgba(5,8,23,0.73); }',
