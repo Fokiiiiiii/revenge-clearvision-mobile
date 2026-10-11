@@ -12,6 +12,8 @@
 | ボタンとアイコンの文字色 | `--interactive-normal`、`--interactive-hover`、`--interactive-active`、`--interactive-muted` |
 | オンライン、離席、取り込み中 | `--online-color`、`--idle-color`、`--dnd-color`、`--offline-color` |
 | 動画全体の暗い膜 | `--background-shading` |
+| チャンネルヘッダーとステータスバー | `--header-shading`、`--statusbar-shading` |
+| ユーザー一覧の画面とカード | `--member-list-shading`、`--member-card-shading` |
 | チャンネル一覧の見出し、下のバー | `--card-shading`、`--input-shading` |
 | メニュー、ポップアップ、モーダル | `--popout-shading`、`--modal-shading` |
 | 暗い膜の強さの倍率 | `--background-shading-percent` |
