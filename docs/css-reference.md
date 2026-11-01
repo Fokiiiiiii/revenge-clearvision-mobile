@@ -48,7 +48,7 @@ Android DiscordのReact Native UIをテーマAPIへ対応付ける実装です�
 
 ## v1.1 のネイティブUIと部品別CSS
 
-配布ZIPにはJSと `plugin.jar` の両方が含まれます。Discord 348.10 の `AshTheme`・`DarkTheme`・`OnyxTheme`・`LightTheme` と実験版テーマの色getterを列挙し、同じ `--discord-...` 変数をネイティブ側にも接続します。埋め込みは `GetEmbedBackgroundColorKt.getEmbedBackgroundColor()` と `EmbedView` の描画経路へ接続します。
+配布ZIPにはJSと `plugin.jar` の両方が含まれます。Discord 348.10 の `AshTheme`・`DarkTheme`・`OnyxTheme`・`LightTheme` と実験版テーマの色getterを列挙し、同じ `--discord-...` 変数をネイティブ側にも接続します。埋め込みはネイティブの `getEmbedBackground()` と `EmbedView.setEmbed-Km7rQmo` の描画経路へ接続します。リソースIDを返す `getEmbedBackgroundColor()` は色の上書き対象にしません。
 
 ```css
 :root {

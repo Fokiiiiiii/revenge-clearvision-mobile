@@ -75,13 +75,6 @@ val clearVision = plugin {
         }
         val themeGetter = classLoader.loadClass("com.discord.theme.ThemeManagerKt").getDeclaredMethod("getTheme")
         fun currentMode() = mode(themeGetter.invoke(null).javaClass.simpleName)
-        val background = classLoader.loadClass("com.discord.chat.presentation.message.view.GetEmbedBackgroundColorKt")
-            .getDeclaredMethod("getEmbedBackgroundColor")
-        hooks += XposedBridge.hookMethod(background, object : XC_MethodHook() {
-            override fun beforeHookedMethod(param: MethodHookParam) {
-                colors["${currentMode()}:EMBED_BACKGROUND"]?.let { param.result = it.toInt() }
-            }
-        })
         val embedClass = classLoader.loadClass("com.discord.chat.presentation.message.view.EmbedView")
         for (method in embedClass.declaredMethods.filter { it.name.startsWith("setEmbed") && !it.name.contains('$') }) {
             hooks += XposedBridge.hookMethod(method, object : XC_MethodHook() {
