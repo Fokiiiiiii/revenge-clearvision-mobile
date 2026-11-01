@@ -189,7 +189,7 @@ export function parseCssColor(value: unknown): ParsedColor | undefined {
 	}
 }
 
-function parsePercent(value: unknown): number | undefined {
+export function parsePercent(value: unknown): number | undefined {
 	if (typeof value !== 'string') return
 	const match = value.trim().match(/^(\d+(?:\.\d+)?)%$/)
 	if (!match) return
@@ -257,7 +257,7 @@ function shadingAlias(name: string): string | undefined {
 		return '--input-shading'
 }
 
-function isShadingToken(name: string) {
+export function isShadingToken(name: string) {
 	return shadingAlias(name) !== undefined
 }
 

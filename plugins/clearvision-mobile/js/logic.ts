@@ -148,8 +148,33 @@ function selectorMatchesVariant(
 }
 
 function resolveCssVariables(variables: Record<string, string>) {
-	function expand(value: string, seen: Set<string>, depth = 0): string {
-		if (depth > 32) return ''
+	const cache = new Map<string, string | undefined>()
+	const stack: string[] = []
+	const cyclic = new Set<string>()
+	function resolve(name: string, depth: number): string | undefined {
+		if (cache.has(name)) return cache.get(name)
+		const cycle = stack.indexOf(name)
+		if (cycle >= 0) {
+			for (const item of stack.slice(cycle)) cyclic.add(item)
+			return
+		}
+		if (
+			!/^--[\w-]+$/.test(name) ||
+			!Object.hasOwn(variables, name) ||
+			typeof variables[name] !== 'string' ||
+			depth > 32
+		)
+			return
+		stack.push(name)
+		const expanded = expand(variables[name]!, depth)
+		stack.pop()
+		const result = cyclic.has(name) ? undefined : expanded
+		cache.set(name, result)
+		return result
+	}
+	// shortcut: expansion is capped at 32 levels and 100000 characters per value; raise only with resource-limit tests.
+	function expand(value: string, depth: number): string | undefined {
+		if (depth > 32) return
 		let output = '',
 			cursor = 0
 		const pattern = /var\(/gi
@@ -160,20 +185,16 @@ function resolveCssVariables(variables: Record<string, string>) {
 				if (value[end] === '(') nesting++
 				if (value[end] === ')') nesting--
 			}
-			if (nesting) break
+			if (nesting) return
 			const content = value.slice(pattern.lastIndex, end - 1)
 			const comma = content.indexOf(',')
 			const name = (comma < 0 ? content : content.slice(0, comma)).trim()
-			const fallback =
-				comma < 0
-					? value.slice(match.index, end)
-					: content.slice(comma + 1).trim()
 			const replacement =
-				variables[name] !== undefined && !seen.has(name)
-					? expand(variables[name]!, new Set(seen).add(name), depth + 1)
-					: comma < 0
-						? fallback
-						: expand(fallback, seen, depth + 1)
+				resolve(name, depth + 1) ??
+				(comma < 0
+					? undefined
+					: expand(content.slice(comma + 1).trim(), depth + 1))
+			if (replacement === undefined) return
 			output = (output + value.slice(cursor, match.index) + replacement).slice(
 				0,
 				100_000,
@@ -183,12 +204,12 @@ function resolveCssVariables(variables: Record<string, string>) {
 		}
 		return (output + value.slice(cursor)).slice(0, 100_000)
 	}
-	return Object.fromEntries(
-		Object.entries(variables).map(([name, value]) => [
-			name,
-			expand(value, new Set([name])),
-		]),
-	)
+	const result: Record<string, string> = {}
+	for (const name of Object.keys(variables)) {
+		const value = resolve(name, 0)
+		if (value !== undefined) result[name] = value
+	}
+	return result
 }
 
 export function extractCssUrl(value: unknown): string | undefined {

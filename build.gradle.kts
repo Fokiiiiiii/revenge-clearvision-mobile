@@ -175,7 +175,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
         add("compileOnly", revengeApiDep)
         add("compileOnly", xposedApiDep)
         add("compileOnly", coroutinesDep)
-        add("testImplementation", kotlin("test"))
+        add("testImplementation", "org.jetbrains.kotlin:kotlin-test-junit:${libs.versions.kotlin.get()}")
     }
 
     val androidExt = extensions.getByType<LibraryExtension>()

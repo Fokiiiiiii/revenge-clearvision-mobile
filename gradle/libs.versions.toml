@@ -1,12 +1,12 @@
 [versions]
-agp = "9.1.1"
-kotlin = "2.4.10"
+agp = "9.2.1"
+kotlin = "2.4.21"
 
 coroutines = "1.11.0"
 xposed = "82"
-revengeApi = "1.1.0"
+revengeApi = "1.2.1"
 
-compileSdk = "36"
+compileSdk = "37"
 minSdk = "24"
 targetSdk = "36"
 javaVersion = "25"

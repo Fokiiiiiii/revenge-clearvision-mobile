@@ -131,6 +131,14 @@ function applyTokenTheme() {
 	).__revengeNextBgVideoMobile
 	tokenTheme?.apply(cssVariables, Boolean(bg?.active && bg.transparentPanels))
 	dimensions?.apply(cssVariables)
+	if (nativeTokenNames.length)
+		nativeCall('clearvision.apply', [
+			createNativeThemeColors(
+				settings.customCss,
+				nativeTokenNames,
+				Boolean(bg?.active && bg.transparentPanels),
+			),
+		])
 }
 
 function panelShade(name: string) {
@@ -148,14 +156,6 @@ function panelShade(name: string) {
 
 function updateClearVisionBridge() {
 	applyTokenTheme()
-	if (nativeTokenNames.length)
-		nativeCall('clearvision.apply', [
-			createNativeThemeColors(
-				settings.customCss,
-				nativeTokenNames,
-				videoBackgroundIsActive(),
-			),
-		])
 	const position = backgroundPositionFromCss(
 		cssVariables['--background-position'],
 	)

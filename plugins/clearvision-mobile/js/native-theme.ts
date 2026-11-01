@@ -1,5 +1,11 @@
 import { parseClearVisionCss } from './logic'
-import { parseCssColor, readColor, rootBackgroundTokens } from './tokens'
+import {
+	isShadingToken,
+	parseCssColor,
+	parsePercent,
+	readColor,
+	rootBackgroundTokens,
+} from './tokens'
 
 export function createNativeThemeColors(
 	css: string,
@@ -26,7 +32,14 @@ export function createNativeThemeColors(
 			const alpha =
 				bgActive && rootBackgroundTokens.has(name)
 					? 0
-					: Math.round(color.opacity * 255)
+					: Math.round(
+							color.opacity *
+								(isShadingToken(name)
+									? (parsePercent(variables['--background-shading-percent']) ??
+										1)
+									: 1) *
+								255,
+						)
 			result[`${mode}:${name}`] =
 				((alpha << 24) | parseInt(color.raw.slice(1), 16)) >>> 0
 		}

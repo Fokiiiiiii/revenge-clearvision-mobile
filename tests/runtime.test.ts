@@ -206,6 +206,13 @@ test('CSS storage updates use the cache and publish readable shading without res
 			shared.__revengeNextClearVisionMobile?.backgroundOverlay,
 		).toStartWith('rgba(5,8,23,')
 		expect(refresh.mock.calls.length).toBeGreaterThanOrEqual(2)
+		const nativeCount = nativeCalls.filter(
+			call => call.name === 'clearvision.apply',
+		).length
+		shared.__revengeNextClearVisionMobile?.refresh()
+		expect(
+			nativeCalls.filter(call => call.name === 'clearvision.apply').length,
+		).toBe(nativeCount + 1)
 	} finally {
 		for (const dispose of disposers.reverse()) dispose()
 		shared.__revengeNextBgVideoMobile = undefined
