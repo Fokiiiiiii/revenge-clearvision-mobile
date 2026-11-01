@@ -18,6 +18,7 @@ val javaVer = libs.versions.javaVersion.get()
 val revengeApiDep = libs.revenge.api.get().toString()
 val xposedApiDep = libs.xposed.api.get().toString()
 val coroutinesDep = libs.kotlinx.coroutines.android.get().toString()
+val kotlinTestDep = "org.jetbrains.kotlin:kotlin-test-junit:${libs.versions.kotlin.get()}"
 val androidLibraryPluginId = libs.plugins.android.library.get().pluginId
 
 // Gradle 9 removed Project.exec from task actions
@@ -175,7 +176,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
         add("compileOnly", revengeApiDep)
         add("compileOnly", xposedApiDep)
         add("compileOnly", coroutinesDep)
-        add("testImplementation", "org.jetbrains.kotlin:kotlin-test-junit:${libs.versions.kotlin.get()}")
+        add("testImplementation", kotlinTestDep)
     }
 
     val androidExt = extensions.getByType<LibraryExtension>()
