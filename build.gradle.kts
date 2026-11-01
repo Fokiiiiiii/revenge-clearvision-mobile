@@ -180,7 +180,9 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     }
 
     val androidExt = extensions.getByType<LibraryExtension>()
-    val sdkDirProvider = extensions.getByType<LibraryAndroidComponentsExtension>().sdkComponents.sdkDirectory
+    val sdkComponents = extensions.getByType<LibraryAndroidComponentsExtension>().sdkComponents
+    val sdkDirProvider = sdkComponents.sdkDirectory
+    val bootClasspathProvider = sdkComponents.bootClasspath
     val execOps = objects.newInstance<ExecOpsProvider>().execOps
 
     tasks.register("dexJar") {
@@ -214,7 +216,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
                 ?.map { File(it, "d8") }
                 ?.firstOrNull(File::isFile)
                 ?: file("$sdkDir/build-tools/$buildToolsVersion/d8")
-            val androidJar = file("$sdkDir/platforms/android-$compileSdkVer/android.jar")
+            val androidJar = bootClasspathProvider.get().map { it.asFile }.first { it.name == "android.jar" }
             require(d8.exists()) { "d8 not found at $d8" }
             require(androidJar.exists()) { "android.jar not found at $androidJar" }
 
