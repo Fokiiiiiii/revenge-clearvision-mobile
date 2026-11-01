@@ -15,6 +15,13 @@ export const rootBackgroundTokens = new Set([
 ])
 
 const aliases: Record<string, readonly string[]> = {
+	BADGE_NOTIFICATION_BACKGROUND: ['--mention-badge-background'],
+	BADGE_TEXT_DEFAULT: ['--mention-badge-text'],
+	MENTION_BACKGROUND: ['--mention-background'],
+	MENTION_FOREGROUND: ['--mention-foreground', '--mention-color'],
+	MESSAGE_MENTIONED_BACKGROUND_DEFAULT: ['--mention-message-background'],
+	MESSAGE_MENTIONED_BACKGROUND_HOVER: ['--mention-message-hover'],
+	MOBILE_UNREADBAR_TEXT_DEFAULT: ['--server-unread-color'],
 	INTERACTIVE_TEXT_DEFAULT: [
 		'--interactive-text-default',
 		'--interactive-normal',

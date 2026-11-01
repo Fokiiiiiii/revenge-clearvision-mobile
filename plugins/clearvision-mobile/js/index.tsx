@@ -2,7 +2,7 @@ import { Tokens } from '@revenge-mod/discord/common/tokens'
 import { getModuleWithImportedPath } from '@revenge-mod/discord/utils/modules/finders'
 import { getModules } from '@revenge-mod/modules/finders'
 import { createFilterGenerator } from '@revenge-mod/modules/finders/filters'
-import { after } from '@revenge-mod/patcher'
+import { after, before, instead } from '@revenge-mod/patcher'
 import { Children, cloneElement, isValidElement } from 'react'
 import { processColor, Text } from 'react-native'
 import { createCssDimensions } from './dimensions'
@@ -28,6 +28,14 @@ import type { ClearVisionThemeVariant, Settings } from './logic'
 
 import { callNativeMethodSync } from '@revenge-mod/modules/native'
 import { createNativeThemeColors } from './native-theme'
+
+import {
+	notificationBadgeProps,
+	notificationBadgeTree,
+	unreadIndicatorTree,
+	replaceUnreadIndicator,
+	replaceUnreadRenderer,
+} from './notifications'
 
 type WithMemoizedNamedExoticComponent = FilterGenerator<
 	<P = object>(
@@ -330,6 +338,106 @@ function transformThemeTree(node: ReactNode, depth = 0): ReactNode {
 	return changed ? cloneElement(element, { children: nextChildren }) : element
 }
 
+function installNotificationHooks(cleanup: (fn: () => unknown) => void) {
+	let active = true
+	const css = () => (active ? cssVariables : {})
+	cleanup(() => {
+		active = false
+	})
+	cleanup(
+		getModuleWithImportedPath('design/void/Badge/native/Badge.tsx', exports => {
+			const module = exports as Record<
+				string,
+				(...args: unknown[]) => ReactNode
+			>
+			const originalBadge = module?.default
+			if (typeof originalBadge !== 'function') return
+			cleanup(
+				before(module, 'default', args => {
+					if (!args[0] || typeof args[0] !== 'object') return args
+					return [
+						notificationBadgeProps(args[0] as Record<string, unknown>, css()),
+						...args.slice(1),
+					]
+				}),
+			)
+			if (typeof module.MaskedBadge === 'function') {
+				cleanup(
+					before(module, 'MaskedBadge', args => {
+						if (!args[0] || typeof args[0] !== 'object') return args
+						return [
+							notificationBadgeProps(
+								args[0] as Record<string, unknown>,
+								css(),
+								true,
+							),
+							...args.slice(1),
+						]
+					}),
+				)
+				cleanup(
+					after(module, 'MaskedBadge', tree =>
+						notificationBadgeTree(tree, originalBadge, css()),
+					),
+				)
+			}
+			console.info('[ClearVision] Notification badge hooks ready')
+		}),
+	)
+	cleanup(
+		getModuleWithImportedPath(
+			'modules/guilds_bar/native/GuildsBarAnimatedItemWrapper.tsx',
+			exports => {
+				const module = exports as Record<
+					string,
+					(...args: unknown[]) => ReactNode
+				>
+				const originalIndicator = module?.UnreadIndicator
+				const originalRenderer = module?.renderUnreadIndicator
+				if (
+					typeof originalIndicator !== 'function' ||
+					typeof originalRenderer !== 'function'
+				)
+					return
+				const ThemedIndicator: FC<Record<string, unknown>> = props =>
+					unreadIndicatorTree(
+						originalIndicator(props),
+						css(),
+						props.selected === true,
+					)
+				const renderer = (...args: unknown[]) =>
+					replaceUnreadIndicator(
+						originalRenderer(...args),
+						originalIndicator,
+						ThemedIndicator,
+					)
+				cleanup(
+					after(module, 'renderUnreadIndicator', tree =>
+						replaceUnreadIndicator(tree, originalIndicator, ThemedIndicator),
+					),
+				)
+				if (typeof module.default === 'function')
+					cleanup(
+						after(module, 'default', tree =>
+							replaceUnreadRenderer(tree, originalRenderer, renderer),
+						),
+					)
+				cleanup(
+					instead(module, 'UnreadIndicator', (args, original) =>
+						unreadIndicatorTree(
+							original(...args),
+							css(),
+							(args[0] as Record<string, unknown> | undefined)?.selected ===
+								true,
+						),
+					),
+				)
+				console.info('[ClearVision] Server unread indicator hooks ready')
+			},
+		),
+	)
+}
+
 function patchSurface(name: string, cleanup: (cleanup: () => unknown) => void) {
 	cleanup(
 		getModules(withMemoizedNamedExoticComponent(name), component => {
@@ -365,6 +473,9 @@ function patchSurface(name: string, cleanup: (cleanup: () => unknown) => void) {
 
 export default plugin<{ jsonStorage: Settings }>({
 	jsonStorage: { load: true, default: DefaultSettings },
+	preInit({ cleanup }) {
+		installNotificationHooks(cleanup)
+	},
 	async start({ cleanup, jsonStorage }) {
 		settings = normalizeSettings(await jsonStorage.get())
 		try {
