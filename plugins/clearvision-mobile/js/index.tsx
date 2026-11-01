@@ -84,7 +84,10 @@ const withRootThemeProvider = createFilterGenerator(
 	() => 'RootThemeContextProvider',
 ) as any
 
-const nativeCall = callNativeMethodSync as (name: string, args: unknown[]) => unknown
+const nativeCall = callNativeMethodSync as (
+	name: string,
+	args: unknown[],
+) => unknown
 let nativeTokenNames: string[] = []
 
 let tokenTheme: ReturnType<typeof createCssTokenTheme> | undefined
@@ -145,7 +148,14 @@ function panelShade(name: string) {
 
 function updateClearVisionBridge() {
 	applyTokenTheme()
-	if (nativeTokenNames.length) nativeCall('clearvision.apply', [createNativeThemeColors(settings.customCss, nativeTokenNames)])
+	if (nativeTokenNames.length)
+		nativeCall('clearvision.apply', [
+			createNativeThemeColors(
+				settings.customCss,
+				nativeTokenNames,
+				videoBackgroundIsActive(),
+			),
+		])
 	const position = backgroundPositionFromCss(
 		cssVariables['--background-position'],
 	)
@@ -358,11 +368,21 @@ export default plugin<{ jsonStorage: Settings }>({
 	async start({ cleanup, jsonStorage }) {
 		settings = normalizeSettings(await jsonStorage.get())
 		try {
-			const native = nativeCall('clearvision.describe', []) as { tokens: string[]; hooks: number }
+			const native = nativeCall('clearvision.describe', []) as {
+				tokens: string[]
+				hooks: number
+			}
 			nativeTokenNames = native.tokens
-			console.info('[ClearVision] Native theme connected', native.hooks, nativeTokenNames.length)
+			console.info(
+				'[ClearVision] Native theme connected',
+				native.hooks,
+				nativeTokenNames.length,
+			)
 		} catch (error) {
-			console.warn('[ClearVision] Native theme unavailable; install the complete plugin ZIP and reload', String(error))
+			console.warn(
+				'[ClearVision] Native theme unavailable; install the complete plugin ZIP and reload',
+				String(error),
+			)
 		}
 		cleanup(() => {
 			if (nativeTokenNames.length) nativeCall('clearvision.apply', [{}])

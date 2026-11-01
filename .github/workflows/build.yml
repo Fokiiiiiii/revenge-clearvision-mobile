@@ -31,7 +31,7 @@ jobs:
       - run: bun test
       - run: bun run lint:types
       - name: Build native plugin and test bridge validation
-        run: ./gradlew packageAllPlugins :plugins:clearvision-mobile:testDebugUnitTest
+        run: bash ./gradlew packageAllPlugins :plugins:clearvision-mobile:testDebugUnitTest
       - uses: actions/upload-artifact@v7
         with:
           name: clearvision-plugin

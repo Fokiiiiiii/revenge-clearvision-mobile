@@ -16,10 +16,14 @@ const Tokens = {
 }
 mock.module('@revenge-mod/discord/common/tokens', () => ({ Tokens }))
 const nativeCalls: Array<{ name: string; args: unknown[] }> = []
-mock.module('@revenge-mod/modules/native', () => ({ callNativeMethodSync: (name: string, args: unknown[]) => {
- nativeCalls.push({ name, args })
- return name === 'clearvision.describe' ? { tokens: ['EMBED_BACKGROUND','TEXT_DEFAULT'], hooks: 3 } : { colors: 8, hooks: 3 }
-} }))
+mock.module('@revenge-mod/modules/native', () => ({
+	callNativeMethodSync: (name: string, args: unknown[]) => {
+		nativeCalls.push({ name, args })
+		return name === 'clearvision.describe'
+			? { tokens: ['EMBED_BACKGROUND', 'TEXT_DEFAULT'], hooks: 3 }
+			: { colors: 8, hooks: 3 }
+	},
+}))
 mock.module('@revenge-mod/modules/finders', () => ({
 	getModules: () => () => {},
 }))
@@ -137,7 +141,14 @@ test('CSS storage updates use the cache and publish readable shading without res
 		},
 	} as never)
 	try {
-		expect(nativeCalls.some(call => call.name === 'clearvision.apply' && (call.args[0] as Record<string, number>)['dark:EMBED_BACKGROUND'] === 0xa3101427)).toBe(true)
+		expect(
+			nativeCalls.some(
+				call =>
+					call.name === 'clearvision.apply' &&
+					(call.args[0] as Record<string, number>)['dark:EMBED_BACKGROUND'] ===
+						0xa3101427,
+			),
+		).toBe(true)
 		const banner = notificationModule.NotificationPressable()
 		const pressable = banner.props.children
 		expect(pressable.props.style).toEqual([

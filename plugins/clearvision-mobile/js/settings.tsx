@@ -43,7 +43,9 @@ export default function SettingsComponent({ api }: Props) {
 					<Button
 						text={t('applyReload', 'Save CSS and reload native UI')}
 						onPress={async () => {
-							await api.jsonStorage.set({ customCss: customCss.slice(0, 100_000) })
+							await api.jsonStorage.set({
+								customCss: customCss.slice(0, 100_000),
+							})
 							BundleUpdaterManager.reload()
 						}}
 					/>

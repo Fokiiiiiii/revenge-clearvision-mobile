@@ -28,7 +28,7 @@ BgVideoが動いているとき、画面全体の暗い膜を背景動画の上�
 
 例: `TEXT_LINK` は `--discord-text-link`、`BORDER_SUBTLE` は `--discord-border-subtle`、`INTERACTIVE_BACKGROUND_SELECTED` は `--discord-interactive-background-selected` です。個別指定をClearVisionの共通変数より優先します。
 
-対応する色指定は `#rgb`、`#rgba`、`#rrggbb`、`#rrggbbaa`、`rgb()`、`rgba()`、`transparent`。無効な値は適用しません。
+対応する色指定は `#rgb`、`#rgba`、`#rrggbb`、`#rrggbbaa`、`rgb()`、`rgba()`、`hsl()`、`hsla()`、CSSの色名です。空白区切り、RGBの百分率、アルファの `/` 指定、入れ子の `var()` fallback、`!important` も扱います。無効な値は適用しません。
 
 ## 角丸と余白
 
@@ -44,4 +44,41 @@ BgVideoが動いているとき、画面全体の暗い膜を背景動画の上�
 
 Android DiscordのReact Native UIをテーマAPIへ対応付ける実装です。PCのDOM・クラス名を対象とする任意のCSS規則、`@import`先のWeb用CSS、Webフォントの自動ダウンロードを実行するCSSエンジンではありません。宣言を含むCSSはそのまま保存し、対応する変数を読み取ります。`--code-font` とPC用の `text-shadow` 規則は未接続です。
 
-プラグイン停止時には変更した色・角丸・余白を復元し、追加した内部色を削除します。
+プラグイン停止時にはJSの色・角丸・余白を復元し、追加した内部色を削除します。ネイティブのhookも解除します。既に色をコピーして描画している部品の更新には再読み込みが必要です。
+
+## v1.1 のネイティブUIと部品別CSS
+
+配布ZIPにはJSと `plugin.jar` の両方が含まれます。Discord 348.10 の `AshTheme`・`DarkTheme`・`OnyxTheme`・`LightTheme` と実験版テーマの色getterを列挙し、同じ `--discord-...` 変数をネイティブ側にも接続します。埋め込みは `GetEmbedBackgroundColorKt.getEmbedBackgroundColor()` と `EmbedView` の描画経路へ接続します。
+
+```css
+:root {
+  --main-color: hsl(270 45% 70%);
+  --button-background: var(--main-color);
+  --button-hover: #927ac5;
+  --button-text: #ffffff;
+  --button-secondary-background: rgba(16, 20, 39, 0.55);
+  --settings-background: rgba(16, 20, 39, 0.55);
+  --settings-hover: rgba(32, 38, 60, 0.65);
+  --embed-title: #e0d6ff;
+}
+
+.embed {
+  background-color: rgb(16 20 39 / 45%);
+  color: #ddd8ee;
+  border-color: rgba(170, 149, 212, 0.4);
+  border-width: 1px;
+  border-radius: 12px;
+}
+
+.theme-light .embed {
+  background-color: rgb(250 248 255 / 65%);
+  color: #292437;
+}
+```
+
+埋め込みは `.embed` / `.embedFull` / `.cv-embed` の `background-color`、`color`、`border-color`、`border-width`、`border-radius` に対応します。変数で指定する場合はそれぞれ `--embed-background`、`--embed-text`、`--embed-border-color`、`--embed-border-width`、`--embed-radius` です。寸法はAndroidの論理pxで、0〜1024を受け付けます。タイトルは `--embed-title` で独立して指定できます。
+
+`.button` / `.cv-button` の背景色・文字色は共通ボタン変数へ、`.settings` / `.cv-settings` の背景色は設定行の変数へ対応します。これらはAndroid向けの部品名です。デスクトップのDOM・任意の複合セレクター・擬似要素・animation・layout全般の解釈は対象外です。V7の `@import` は保存したまま実行せず、変数宣言を利用します。
+
+設定変更で色と表示中の埋め込みへ反映します。初期化時に色をコピーするボタン・画面は「CSSを保存してネイティブUIを再読み込み」で更新します。既存のCSSとプラグイン保存領域を維持します。
+
