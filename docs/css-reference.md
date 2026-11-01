@@ -81,3 +81,31 @@ Android DiscordのReact Native UIをテーマAPIへ対応付ける実装です�
 `.button` / `.cv-button` の背景色・文字色は共通ボタン変数へ、`.settings` / `.cv-settings` の背景色は設定行の変数へ対応します。これらはAndroid向けの部品名です。デスクトップのDOM・任意の複合セレクター・擬似要素・animation・layout全般の解釈は対象外です。V7の `@import` は保存したまま実行せず、変数宣言を利用します。
 
 設定変更で色と表示中の埋め込みへ反映します。初期化時に色をコピーするボタン・画面は「CSSを保存してネイティブUIを再読み込み」で更新します。既存のCSSとプラグイン保存領域を維持します。
+
+## メンション通知・サーバー一覧のマーク（v1.1.1）
+
+```css
+:root {
+  --mention-badge-background: var(--main-color);
+  --mention-badge-text: #1b122c;
+  --mention-badge-size: 20px;
+  --mention-badge-font-size: 12px;
+  --mention-badge-radius: 10px;
+  --mention-badge-border: rgba(255, 255, 255, 0.3);
+  --mention-badge-border-width: 1px;
+  --notification-dot-color: var(--main-color);
+  --notification-dot-size: 8px;
+  --server-unread-color: #d8c7ff;
+  --server-selected-color: var(--main-color);
+  --server-unread-width: 8px;
+  --server-unread-height: 10px;
+  --server-selected-height: 36px;
+  --server-unread-radius: 4px;
+  --mention-background: rgba(170, 149, 212, 0.2);
+  --mention-foreground: var(--text-link, var(--normal-text));
+}
+```
+
+メンション数バッジは16〜48px、文字は8〜28px。文字だけを大きくした場合はバッジとmaskも拡大します。通知dotは2〜16px、サーバーの未読マーク幅は2〜16px、高さは4〜64pxです。範囲外の値は適用しません。未設定の項目は元の表示を維持します。
+
+対象は実機で確認した `design/void/Badge/native/Badge.tsx` のBadge/MaskedBadgeと、`GuildsBarAnimatedItemWrapper` のUnreadIndicator/renderUnreadIndicatorです。初期import時にhookし、module内に保持された描画関数にもスタイルを適用します。数字・既読/未読状態・通知設定・クリックやアクセシビリティの動作は保持します。CSSによる外観変更は、通知のミュートや既読化ではありません。
