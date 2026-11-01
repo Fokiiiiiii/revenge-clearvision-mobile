@@ -4,7 +4,7 @@
   "name": "ClearVision Mobile",
   "description": "ClearVision-inspired appearance controls for Revenge Next on Android.",
   "author": "Fokiiiiiii",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "dependencies": {
     "revenge.api": {
       "version": ">=1 <2"
@@ -14,6 +14,7 @@
     }
   },
   "dist": {
-    "script": "index.js"
+    "script": "index.js",
+    "android": { "path": "plugin.jar", "class": "dev.foki.clearvision.ClearVision" }
   }
 }

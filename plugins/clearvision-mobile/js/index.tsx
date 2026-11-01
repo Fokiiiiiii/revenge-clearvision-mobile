@@ -26,6 +26,9 @@ import type {
 import type { FC, MemoExoticComponent, ReactElement, ReactNode } from 'react'
 import type { ClearVisionThemeVariant, Settings } from './logic'
 
+import { callNativeMethodSync } from '@revenge-mod/modules/native'
+import { createNativeThemeColors } from './native-theme'
+
 type WithMemoizedNamedExoticComponent = FilterGenerator<
 	<P = object>(
 		name: string,
@@ -80,6 +83,9 @@ const withRootThemeProvider = createFilterGenerator(
 			?.RootThemeContextProvider === 'function',
 	() => 'RootThemeContextProvider',
 ) as any
+
+const nativeCall = callNativeMethodSync as (name: string, args: unknown[]) => unknown
+let nativeTokenNames: string[] = []
 
 let tokenTheme: ReturnType<typeof createCssTokenTheme> | undefined
 let dimensions: ReturnType<typeof createCssDimensions> | undefined
@@ -139,6 +145,7 @@ function panelShade(name: string) {
 
 function updateClearVisionBridge() {
 	applyTokenTheme()
+	if (nativeTokenNames.length) nativeCall('clearvision.apply', [createNativeThemeColors(settings.customCss, nativeTokenNames)])
 	const position = backgroundPositionFromCss(
 		cssVariables['--background-position'],
 	)
@@ -350,6 +357,17 @@ export default plugin<{ jsonStorage: Settings }>({
 	jsonStorage: { load: true, default: DefaultSettings },
 	async start({ cleanup, jsonStorage }) {
 		settings = normalizeSettings(await jsonStorage.get())
+		try {
+			const native = nativeCall('clearvision.describe', []) as { tokens: string[]; hooks: number }
+			nativeTokenNames = native.tokens
+			console.info('[ClearVision] Native theme connected', native.hooks, nativeTokenNames.length)
+		} catch (error) {
+			console.warn('[ClearVision] Native theme unavailable; install the complete plugin ZIP and reload', String(error))
+		}
+		cleanup(() => {
+			if (nativeTokenNames.length) nativeCall('clearvision.apply', [{}])
+			nativeTokenNames = []
+		})
 		tokenTheme = createCssTokenTheme(Tokens)
 		dimensions = createCssDimensions(Tokens)
 		cssVariables = parseClearVisionCss(settings.customCss, currentVariant)

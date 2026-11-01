@@ -1,3 +1,5 @@
+import { parseCssColor } from './tokens'
+
 export interface Settings {
 	customCss: string
 }
@@ -7,36 +9,12 @@ export const DefaultSettings: Settings = {
 }
 
 export function normalizeCssColor(value: unknown, fallback: string) {
-	if (typeof value !== 'string') return fallback
+	const parsed = parseCssColor(value)
+	if (!parsed || typeof value !== 'string') return fallback
 	const normalized = value.trim()
-	if (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(normalized))
-		return normalized
-	const named: Record<string, string> = {
-		black: '#000000',
-		blue: '#0000ff',
-		green: '#008000',
-		purple: '#800080',
-		red: '#ff0000',
-		white: '#ffffff',
-		yellow: '#ffff00',
-		transparent: 'transparent',
-	}
-	if (named[normalized.toLowerCase()]) return named[normalized.toLowerCase()]
-	const match = normalized.match(/^rgba?\(([^)]+)\)$/i)
-	if (!match) return fallback
-	const parts = match[1]
-		.split(',')
-		.map(part => Number(part.trim().replace(/%$/, '')))
-	if (
-		parts.length !== (normalized.toLowerCase().startsWith('rgba') ? 4 : 3) ||
-		parts
-			.slice(0, 3)
-			.some(value => !Number.isFinite(value) || value < 0 || value > 255) ||
-		(parts.length === 4 &&
-			(!Number.isFinite(parts[3]) || parts[3] < 0 || parts[3] > 1))
-	)
-		return fallback
-	return normalized
+	if (normalized.toLowerCase() === 'transparent') return 'transparent'
+	if (/^#|^rgba?\(/i.test(normalized) && !/[%/]/.test(normalized)) return normalized
+	return `${parsed.raw}${Math.round(parsed.opacity * 255).toString(16).padStart(2, '0')}`
 }
 
 export function normalizeSettings(value: unknown): Settings {
@@ -68,6 +46,7 @@ export type ClearVisionThemeVariant = 'light' | 'dark' | 'darker' | 'midnight'
 
 const sharedCssDefaults: Record<string, string> = {
 	'--main-color': '#2780e6',
+	'--button-text': '#ffffff',
 	'--hover-color': '#1e63b3',
 	'--success-color': '#43b581',
 	'--warning-color': '#fff',
@@ -166,21 +145,31 @@ function selectorMatchesVariant(
 }
 
 function resolveCssVariables(variables: Record<string, string>) {
-	function resolve(name: string, seen: Set<string>): string {
-		const value = variables[name]
-		if (value === undefined || seen.has(name)) return value ?? ''
-		const nextSeen = new Set(seen).add(name)
-		return value.replace(
-			/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)/gi,
-			(match, dependency: string, fallback?: string) =>
-				variables[dependency] === undefined
-					? fallback?.trim() || match
-					: resolve(dependency, nextSeen),
-		)
+	function expand(value: string, seen: Set<string>, depth = 0): string {
+		if (depth > 32) return ''
+		let output = '', cursor = 0
+		const pattern = /var\(/gi
+		for (let match = pattern.exec(value); match; match = pattern.exec(value)) {
+			let end = pattern.lastIndex, nesting = 1
+			for (; end < value.length && nesting; end++) {
+				if (value[end] === '(') nesting++
+				if (value[end] === ')') nesting--
+			}
+			if (nesting) break
+			const content = value.slice(pattern.lastIndex, end - 1)
+			const comma = content.indexOf(',')
+			const name = (comma < 0 ? content : content.slice(0, comma)).trim()
+			const fallback = comma < 0 ? value.slice(match.index, end) : content.slice(comma + 1).trim()
+			const replacement = variables[name] !== undefined && !seen.has(name)
+				? expand(variables[name]!, new Set(seen).add(name), depth + 1)
+				: comma < 0 ? fallback : expand(fallback, seen, depth + 1)
+			output = (output + value.slice(cursor, match.index) + replacement).slice(0, 100_000)
+			cursor = end
+			pattern.lastIndex = end
+		}
+		return (output + value.slice(cursor)).slice(0, 100_000)
 	}
-	return Object.fromEntries(
-		Object.keys(variables).map(name => [name, resolve(name, new Set())]),
-	) as Record<string, string>
+	return Object.fromEntries(Object.entries(variables).map(([name, value]) => [name, expand(value, new Set([name]))]))
 }
 
 export function extractCssUrl(value: unknown): string | undefined {
@@ -228,21 +217,32 @@ export function parseClearVisionCss(
 	css: string,
 	variant: ClearVisionThemeVariant = 'dark',
 ): Record<string, string> {
-	const variables = {
-		...sharedCssDefaults,
-		...(variantCssDefaults[variant] ?? variantCssDefaults.dark),
-	}
+	const variables = { ...sharedCssDefaults, ...(variantCssDefaults[variant] ?? variantCssDefaults.dark) }
+	const important = new Set<string>()
 	const source = css.slice(0, 100_000).replace(/\/\*[\s\S]*?\*\//g, '')
-	for (const [, rawSelector, body] of source.matchAll(
-		/([^{}]+)\{([^{}]*)\}/g,
-	)) {
+	function assign(name: string, value: string) {
+		const priority = /\s*!important$/i.test(value)
+		if (important.has(name) && !priority) return
+		variables[name] = value.trim().replace(/\s*!important$/i, '')
+		if (priority) important.add(name)
+	}
+	for (const [, rawSelector, body] of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
 		const selector = rawSelector.trim()
 		const isRoot = selector.split(',').some(part => part.includes(':root'))
-		if (!isRoot && !selectorMatchesVariant(selector, variant)) continue
-		for (const [, name, rawValue] of body.matchAll(
-			/(--[\w-]+)\s*:\s*([^;{}]+)\s*;?/g,
-		)) {
-			variables[name] = rawValue.trim().replace(/\s*!important$/i, '')
+		const matchesTheme = selectorMatchesVariant(selector, variant)
+		const embed = /\.(?:embed|embedFull|cv-embed)(?:\b|_)/.test(selector)
+		const button = /\.(?:button|cv-button)(?:\b|_)/.test(selector)
+		const settings = /\.(?:settings|cv-settings)(?:\b|_)/.test(selector)
+		if (!isRoot && !matchesTheme && !(embed || button || settings)) continue
+		if (/\.theme-/.test(selector) && !matchesTheme) continue
+		if (embed || button || settings) {
+			const prefix = embed ? 'embed' : button ? 'button' : 'settings'
+			const properties: Record<string,string> = { background: 'background', 'background-color': 'background', color: 'text', 'border-color': 'border-color', 'border-width': 'border-width', 'border-radius': 'radius' }
+			for (const [, property, value] of body.matchAll(/(?:^|;)\s*([\w-]+)\s*:\s*([^;{}]+)/g)) {
+				if (properties[property]) assign(`--${prefix}-${properties[property]}`, value)
+			}
+		} else {
+			for (const [, name, value] of body.matchAll(/(--[\w-]+)\s*:\s*([^;{}]+)\s*;?/g)) assign(name, value)
 		}
 	}
 	return resolveCssVariables(variables)

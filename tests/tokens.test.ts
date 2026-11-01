@@ -249,7 +249,7 @@ describe('ClearVision semantic CSS tokens', () => {
 		const originalSemantic = structuredClone(tokens.Tokens.SemanticColor)
 		const originalRaw = { ...tokens.Tokens.RawColor }
 
-		theme.apply({ '--discord-text-default': 'hsl(220 20% 30%)' }, false)
+		theme.apply({ '--discord-text-default': 'hsl(220 invalid 30%)' }, false)
 
 		expect(tokens.Tokens.SemanticColor).toEqual(originalSemantic)
 		expect(tokens.Tokens.RawColor).toEqual(originalRaw)

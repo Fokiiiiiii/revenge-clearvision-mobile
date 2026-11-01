@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { normalizeCssColor } from '../plugins/clearvision-mobile/js/logic'
 
 test('rejects malformed hex and RGB arity before passing a color to React Native', () => {
-	for (const value of ['#12345', '#1234567', 'rgba(1,2,3)', 'rgb(1,2,3,0.5)'])
+	for (const value of ['#12345', '#1234567', 'rgba(1,2)', 'rgb(1,2,3,0.5,6)'])
 		expect(normalizeCssColor(value, 'transparent')).toBe('transparent')
 	for (const value of [
 		'#123',

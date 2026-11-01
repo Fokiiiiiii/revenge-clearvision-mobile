@@ -1,3 +1,4 @@
+import { BundleUpdaterManager } from '@revenge-mod/discord/native'
 import Page from '@revenge-mod/components/Page'
 import { Design } from '@revenge-mod/discord/design'
 import { useState } from 'react'
@@ -8,7 +9,7 @@ import type { ComponentProps } from 'react'
 import type { Settings } from './logic'
 
 type Props = ComponentProps<PluginSettingsComponent<{ jsonStorage: Settings }>>
-const { Stack, TableRowGroup, TextInput } = Design
+const { Stack, TableRowGroup, TextInput, Button } = Design
 
 export default function SettingsComponent({ api }: Props) {
 	const settings = api.jsonStorage.use(value => value)!
@@ -39,6 +40,13 @@ export default function SettingsComponent({ api }: Props) {
 							returnKeyType="default"
 						/>
 					</TableRowGroup>
+					<Button
+						text={t('applyReload', 'Save CSS and reload native UI')}
+						onPress={async () => {
+							await api.jsonStorage.set({ customCss: customCss.slice(0, 100_000) })
+							BundleUpdaterManager.reload()
+						}}
+					/>
 				</Stack>
 			</ScrollView>
 		</Page>

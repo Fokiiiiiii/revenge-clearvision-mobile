@@ -1,3 +1,5 @@
+import normalizeColor from '@react-native/normalize-colors'
+
 type Mode = 'dark' | 'light' | 'darker' | 'midnight'
 type MutableRecord = Record<string, unknown>
 type ParsedColor = { raw: string; opacity: number }
@@ -13,6 +15,46 @@ const rootBackgroundTokens = new Set([
 ])
 
 const aliases: Record<string, readonly string[]> = {
+	INTERACTIVE_TEXT_DEFAULT: ['--interactive-text-default', '--interactive-normal', '--normal-text'],
+	INTERACTIVE_TEXT_HOVER: ['--interactive-text-hover', '--interactive-hover', '--normal-text'],
+	INTERACTIVE_TEXT_ACTIVE: ['--interactive-text-active', '--interactive-active', '--normal-text'],
+	INTERACTIVE_ICON_DEFAULT: ['--interactive-normal', '--normal-text'],
+	INTERACTIVE_ICON_ACTIVE: ['--interactive-active', '--normal-text'],
+	INTERACTIVE_ICON_HOVER: ['--interactive-hover', '--normal-text'],
+	ICON_STRONG: ['--text-primary', '--normal-text'],
+	ICON_SUBTLE: ['--muted-text'],
+	ICON_MUTED: ['--interactive-muted', '--muted-text'],
+	TEXT_BRAND: ['--main-color'],
+	ICON_BRAND: ['--main-color'],
+	BACKGROUND_BRAND: ['--main-color'],
+	INPUT_TEXT_DEFAULT: ['--normal-text'],
+	INPUT_PLACEHOLDER_TEXT_DEFAULT: ['--muted-text'],
+	INPUT_ICON_DEFAULT: ['--interactive-normal', '--normal-text'],
+	TABLEROW_ICON_COLOR_DEFAULT: ['--interactive-normal', '--normal-text'],
+	TAB_LABEL_TEXT_DEFAULT: ['--muted-text'],
+	TAB_LABEL_TEXT_FOCUSED: ['--main-color'],
+	MOBILE_TEXT_HEADING_PRIMARY: ['--text-primary', '--normal-text'],
+	CONTROL_PRIMARY_BACKGROUND_DEFAULT: ['--button-background', '--main-color'],
+	CONTROL_PRIMARY_BACKGROUND_ACTIVE: ['--button-hover', '--hover-color'],
+	CONTROL_PRIMARY_BORDER_DEFAULT: ['--button-border', '--main-color'],
+	CONTROL_PRIMARY_BORDER_ACTIVE: ['--button-border', '--hover-color'],
+	CONTROL_PRIMARY_TEXT_DEFAULT: ['--button-text'],
+	CONTROL_SECONDARY_BACKGROUND_DEFAULT: ['--button-secondary-background', '--card-shading'],
+	CONTROL_SECONDARY_BACKGROUND_ACTIVE: ['--button-secondary-hover', '--input-shading'],
+	CONTROL_SECONDARY_TEXT_DEFAULT: ['--button-secondary-text', '--normal-text'],
+	CONTROL_EXPRESSIVE_BACKGROUND_DEFAULT: ['--button-background', '--main-color'],
+	CONTROL_EXPRESSIVE_TEXT_DEFAULT: ['--button-text'],
+	CHAT_INPUT_SEND_BUTTON_ACTIVE_BACKGROUND: ['--main-color'],
+	CHAT_INPUT_SEND_BUTTON_ICON_ACTIVE_TINT: ['--button-text'],
+	CHECKBOX_BACKGROUND_SELECTED_DEFAULT: ['--main-color'],
+	SWITCH_BACKGROUND_SELECTED_DEFAULT: ['--main-color'],
+	TOGGLEBUTTON_BACKGROUND_SELECTED: ['--main-color'],
+	EMBED_BACKGROUND: ['--embed-background', '--card-shading'],
+	EMBED_BACKGROUND_ALTERNATE: ['--embed-background', '--card-shading'],
+	MOBILE_EMBED_BACKGROUND_DEFAULT: ['--embed-background', '--card-shading'],
+	MOBILE_THREAD_EMBED_BACKGROUND: ['--embed-background', '--card-shading'],
+	TABLEROW_BACKGROUND_DEFAULT: ['--settings-background', '--card-shading'],
+	TABLEROW_BACKGROUND_PRESSED: ['--settings-hover', '--input-shading'],
 	TEXT_DEFAULT: ['--text-normal', '--normal-text'],
 	TEXT_STRONG: ['--text-primary', '--header-primary'],
 	TEXT_SUBTLE: ['--text-secondary'],
@@ -58,7 +100,7 @@ function parseAlpha(value: string): number | undefined {
 	return percent ? number / 100 : number
 }
 
-function parseCssColor(value: unknown): ParsedColor | undefined {
+export function parseCssColor(value: unknown): ParsedColor | undefined {
 	if (typeof value !== 'string') return
 	const color = value.trim().toLowerCase()
 	if (color === 'transparent') return { raw: '#000000', opacity: 0 }
@@ -75,6 +117,24 @@ function parseCssColor(value: unknown): ParsedColor | undefined {
 		}
 	}
 
+	if (/^[a-z]+$/.test(color)) {
+		const rgba = normalizeColor(color)
+		if (rgba !== null) return { raw: `#${(rgba >>> 8).toString(16).padStart(6, '0')}`, opacity: (rgba & 255) / 255 }
+	}
+	const hsl = color.match(/^hsla?\((.*)\)$/i)
+	if (hsl) {
+		const parts = hsl[1]!.trim().split(/\s*[,/]\s*|\s+/)
+		if (parts.length !== 3 && parts.length !== 4) return
+		const hue = parts[0]!.match(/^([+-]?(?:\d*\.)?\d+)(deg|grad|rad|turn)?$/)
+		if (!hue || !parts.slice(1, 3).every(part => /^\d*\.?\d+%$/.test(part))) return
+		const angle = Number(hue[1]) * ({deg:1,grad:0.9,rad:180/Math.PI,turn:360}[hue[2] || 'deg'] ?? 1)
+		const alpha = parts.length === 4 ? parseAlpha(parts[3]!) : 1
+		if (!Number.isFinite(angle) || alpha === undefined) return
+		const rgba = normalizeColor(`hsla(${angle},${parts[1]},${parts[2]},${alpha})`)
+		if (rgba !== null) return { raw: `#${(rgba >>> 8).toString(16).padStart(6, '0')}`, opacity: alpha }
+		return
+	}
+
 	const match = color.match(/^(rgba?)\((.*)\)$/i)
 	if (!match) return
 	const body = match[2]!.trim()
@@ -82,7 +142,6 @@ function parseCssColor(value: unknown): ParsedColor | undefined {
 		? body.split(/\s*,\s*/)
 		: body.replace(/\s*\/\s*/, ' ').split(/\s+/)
 	if (
-		(match[1]!.toLowerCase() === 'rgba' && parts.length !== 4) ||
 		(parts.length !== 3 && parts.length !== 4)
 	)
 		return
@@ -137,6 +196,11 @@ function shadingAlias(name: string): string | undefined {
 		/(^|_)(BACKGROUND|BG)(_|$)/.test(name)
 	)
 		return '--popout-shading'
+	if (name === 'TABLEROW_BACKGROUND_DEFAULT' || name === 'TABLEROW_BACKGROUND_PRESSED') return '--settings-background'
+	if (name === 'MOBILE_ACTIONSHEET_BACKGROUND' || name === 'MOBILE_EXPRESSION_PICKER_BACKGROUND_DEFAULT') return '--popout-shading'
+	if (name === 'MOBILE_ALERT_BACKGROUND_DEFAULT') return '--modal-shading'
+	if (name === 'BG_SURFACE_RAISED' || name === 'BACKGROUND_SECONDARY_ALT' || name === 'TAB_BAR_BACKGROUND' || name === 'PANEL_BG') return '--card-shading'
+	if (name === 'INPUT_BACKGROUND_DEFAULT' || name.startsWith('MOBILE_CHATINPUT_BACKGROUND') || name === 'REDESIGN_CHAT_INPUT_BACKGROUND' || name === 'SHARE_CHAT_INPUT_BACKGROUND') return '--input-shading'
 	if (name === 'CHAT_INPUT_BACKGROUND' || name === 'CHANNELTEXTAREA_BACKGROUND')
 		return '--input-shading'
 }
@@ -145,7 +209,7 @@ function isShadingToken(name: string) {
 	return shadingAlias(name) !== undefined
 }
 
-function readColor(
+export function readColor(
 	name: string,
 	vars: Record<string, string>,
 ): ParsedColor | undefined {
