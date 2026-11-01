@@ -58,17 +58,71 @@ const notificationModule = {
 			),
 		),
 }
+const originalBadge = (props: Record<string, unknown>) =>
+	createElement('Badge', props)
+const badgeModule = {
+	default: originalBadge,
+	MaskedBadge: (props: Record<string, unknown>) =>
+		createElement(
+			'Mask',
+			{ style: props.maskStyle },
+			createElement(originalBadge, props),
+		),
+}
+const originalMasked = badgeModule.MaskedBadge
+const originalIndicator = (props: Record<string, unknown>) =>
+	createElement('AnimatedView', {
+		pointerEvents: 'none',
+		style: { height: 8, width: 8 },
+	})
+const originalRenderer = (props: Record<string, unknown>) =>
+	createElement(originalIndicator, props)
+const originalWrapper = () =>
+	createElement('TransitionGroup', { renderItem: originalRenderer, items: [] })
+const unreadModule = {
+	default: originalWrapper,
+	UnreadIndicator: originalIndicator,
+	renderUnreadIndicator: originalRenderer,
+}
 const originalNotification = notificationModule.NotificationPressable
 mock.module('@revenge-mod/discord/utils/modules/finders', () => ({
-	getModuleWithImportedPath: (
-		_path: string,
-		found: (module: typeof notificationModule) => void,
-	) => {
-		found(notificationModule)
+	getModuleWithImportedPath: (path: string, found: (module: any) => void) => {
+		found(
+			path.includes('/Badge/native/Badge')
+				? badgeModule
+				: path.includes('GuildsBarAnimatedItemWrapper')
+					? unreadModule
+					: notificationModule,
+		)
 		return () => {}
 	},
 }))
 mock.module('@revenge-mod/patcher', () => ({
+	before: (
+		target: Record<string, any>,
+		key: string,
+		callback: (args: unknown[]) => unknown[],
+	) => {
+		const original = target[key]
+		target[key] = (...args: unknown[]) => original(...callback(args))
+		return () => {
+			target[key] = original
+		}
+	},
+	instead: (
+		target: Record<string, any>,
+		key: string,
+		callback: (
+			args: unknown[],
+			original: (...args: unknown[]) => unknown,
+		) => unknown,
+	) => {
+		const original = target[key]
+		target[key] = (...args: unknown[]) => callback(args, original)
+		return () => {
+			target[key] = original
+		}
+	},
 	after: (
 		target: Record<string, any>,
 		key: string,
@@ -123,10 +177,13 @@ test('CSS storage updates use the cache and publish readable shading without res
 	else Reflect.set(globalThis, 'plugin', oldFactory)
 	let stored = {
 		customCss:
-			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); --header-shading: rgba(10,15,33,0.46); --member-list-shading: rgba(9,14,31,0.22); --member-card-shading: rgba(21,27,48,0.38); --notification-shading: rgba(10,15,33,0.92); }',
+			':root { --normal-text: #abcdef; --background-shading: rgba(7,11,26,0.68); --card-shading: rgba(16,20,39,0.64); --input-shading: rgba(10,15,33,0.74); --header-shading: rgba(10,15,33,0.46); --member-list-shading: rgba(9,14,31,0.22); --member-card-shading: rgba(21,27,48,0.38); --notification-shading: rgba(10,15,33,0.92); --mention-badge-background: #aa95d4; --mention-badge-size: 20px; --server-unread-color: #ddd0ff; }',
 	}
 	let notify: (value?: unknown) => void = () => {}
 	const disposers: Array<() => void> = []
+	plugin.preInit!({
+		cleanup: (callback: () => void) => disposers.push(callback),
+	} as never)
 	await plugin.start!({
 		cleanup: (callback: () => void) => disposers.push(callback),
 		jsonStorage: {
@@ -141,6 +198,44 @@ test('CSS storage updates use the cache and publish readable shading without res
 		},
 	} as never)
 	try {
+		const badge = badgeModule.default({
+			value: 7,
+			accessibilityLabel: '7 mentions',
+		})
+		expect(badge.props.value).toBe(7)
+		expect(badge.props.style).toEqual([
+			undefined,
+			{
+				backgroundColor: '#aa95d4',
+				height: 20,
+				minWidth: 20,
+				borderRadius: 10,
+			},
+		])
+		const masked = badgeModule.MaskedBadge({ value: 7 })
+		expect(masked.props.style).toEqual([
+			undefined,
+			{ minWidth: 26, height: 26, borderRadius: 13 },
+		])
+		expect((masked.props.children as any).props.style).toEqual([
+			undefined,
+			{
+				backgroundColor: '#aa95d4',
+				height: 20,
+				minWidth: 20,
+				borderRadius: 10,
+			},
+		])
+		const rendered = unreadModule.renderUnreadIndicator({
+			selected: false,
+		}) as any
+		const indicator = rendered.type(rendered.props)
+		expect(indicator.props.style).toEqual([
+			{ height: 8, width: 8 },
+			{ backgroundColor: '#ddd0ff' },
+		])
+		const group = unreadModule.default() as any
+		expect(group.props.renderItem).not.toBe(originalRenderer)
 		expect(
 			nativeCalls.some(
 				call =>
@@ -217,6 +312,11 @@ test('CSS storage updates use the cache and publish readable shading without res
 		for (const dispose of disposers.reverse()) dispose()
 		shared.__revengeNextBgVideoMobile = undefined
 	}
+	expect(badgeModule.default).toBe(originalBadge)
+	expect(badgeModule.MaskedBadge).toBe(originalMasked)
+	expect(unreadModule.UnreadIndicator).toBe(originalIndicator)
+	expect(unreadModule.renderUnreadIndicator).toBe(originalRenderer)
+	expect(unreadModule.default).toBe(originalWrapper)
 	expect(nativeCalls.at(-1)).toEqual({ name: 'clearvision.apply', args: [{}] })
 	expect(notificationModule.NotificationPressable).toBe(originalNotification)
 	expect(shared.__revengeNextClearVisionMobile).toBeUndefined()
